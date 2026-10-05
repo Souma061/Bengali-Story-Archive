@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #ffc665;
+  --color-primary-container: #e5a93c;
+  --color-on-primary-container: #5e4000;
+  --color-secondary: #ffb3ae;
+  --color-secondary-container: #8f191f;
+  --color-tertiary: #ddcdae;
+  --color-tertiary-fixed: #f1e1c0;
+  --color-surface: #141315;
+  --color-surface-container: #201f21;
+  --color-surface-container-low: #1c1b1d;
+  --color-surface-container-high: #2b292c;
+  --color-surface-container-highest: #363436;
+  --color-surface-container-lowest: #0f0e10;
+  --color-outline: #9d8f7c;
+  --color-outline-variant: #504535;
+  --color-on-surface: #e6e1e4;
+  --color-on-surface-variant: #d4c4b0;
+}
+
+body {
+  font-family: 'Manrope', sans-serif;
+  background-color: #141315;
+  color: #e6e1e4;
+  background-image: 
+    radial-gradient(ellipse at 50% 0%, rgba(229, 169, 60, 0.09) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 40%, rgba(143, 25, 31, 0.07) 0%, transparent 50%),
+    linear-gradient(180deg, #0f0e10 0%, #141315 100%);
+  background-attachment: fixed;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+.font-serif-bengali {
+  font-family: 'Noto Serif Bengali', 'Noto Serif', serif;
+}
+
+.font-mono-retro {
+  font-family: 'Space Mono', monospace;
+}
+
+/* Subtle vinyl microgrooves */
+.vinyl-grooves {
+  background: repeating-radial-gradient(
+    circle at 50% 50%,
+    #1c1b1d,
+    #1c1b1d 2px,
+    #0f0e10 3px,
+    #201f21 4px
+  );
+}
+
+/* Reel-to-reel spin animation */
+@keyframes spinReel {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spinReel 12s linear infinite;
+}
+.animate-spin-mid {
+  animation: spinReel 4s linear infinite;
+}
+
+/* Equalizer Pulse Bars */
+@keyframes eqBar {
+  0%, 100% { height: 4px; }
+  50% { height: 18px; }
+}
+.eq-bar-1 { animation: eqBar 0.9s ease-in-out infinite; }
+.eq-bar-2 { animation: eqBar 0.6s ease-in-out infinite 0.2s; }
+.eq-bar-3 { animation: eqBar 1.2s ease-in-out infinite 0.1s; }
+.eq-bar-4 { animation: eqBar 0.7s ease-in-out infinite 0.4s; }
+.eq-bar-5 { animation: eqBar 1.0s ease-in-out infinite 0.3s; }
+
+/* Tube glow shadow */
+.glow-amber {
+  box-shadow: 0 0 24px -4px rgba(229, 169, 60, 0.38);
+}
+.glow-crimson {
+  box-shadow: 0 0 20px -4px rgba(143, 25, 31, 0.4);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0f0e10;
+}
+::-webkit-scrollbar-thumb {
+  background: #504535;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ffc665;
+}
