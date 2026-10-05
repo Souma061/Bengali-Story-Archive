@@ -1,0 +1,62 @@
+{
+  "source": "https://www.youtube.com/show/VLPLq71IJk8mCV4-DqsZ7W6zRS7uzKOmmT8j?sbp=KgtHOXhYeWswWXNtTUAB",
+  "totalSourceStories": 525,
+  "classification": "Collections inferred from title text; a story may belong to multiple collections.",
+  "collections": [
+    {
+      "name": "feluda",
+      "count": 20,
+      "file": "feluda.json"
+    },
+    {
+      "name": "byomkesh",
+      "count": 18,
+      "file": "byomkesh.json"
+    },
+    {
+      "name": "sherlock_holmes",
+      "count": 20,
+      "file": "sherlock_holmes.json"
+    },
+    {
+      "name": "daroga_priyonath",
+      "count": 7,
+      "file": "daroga_priyonath.json"
+    },
+    {
+      "name": "kiriti",
+      "count": 2,
+      "file": "kiriti.json"
+    },
+    {
+      "name": "tenida",
+      "count": 3,
+      "file": "tenida.json"
+    },
+    {
+      "name": "miss_marple",
+      "count": 2,
+      "file": "miss_marple.json"
+    },
+    {
+      "name": "professor_shonku",
+      "count": 24,
+      "file": "professor_shonku.json"
+    },
+    {
+      "name": "sunday_suspense_classics",
+      "count": 71,
+      "file": "sunday_suspense_classics.json"
+    },
+    {
+      "name": "best_of_sunday_suspense",
+      "count": 4,
+      "file": "best_of_sunday_suspense.json"
+    },
+    {
+      "name": "other_sunday_suspense",
+      "count": 364,
+      "file": "other_sunday_suspense.json"
+    }
+  ]
+}

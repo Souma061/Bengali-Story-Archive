@@ -1,5 +1,5 @@
-import rawStories from '../../Data/stories.json';
-import rawSherlock from '../../Data/sherlock_stories.json';
+import rawStories from './data/stories.json';
+import rawSherlock from './data/sherlock_stories.json';
 import type { Story, CollectionItem } from './types';
 
 export const CHARACTER_META: Record<string, { label: string; bengali: string }> = {

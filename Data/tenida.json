@@ -1,0 +1,48 @@
+{
+  "collection": "tenida",
+  "count": 3,
+  "stories": [
+    {
+      "id": "mos2YaCQnhM",
+      "title": "Sunday Suspense | Dadhichi, Poka o Biswakarma | টেনিদা | Narayan Gangopadhyay | Mirchi Bangla",
+      "youtubeId": "mos2YaCQnhM",
+      "youtubeUrl": "https://www.youtube.com/watch?v=mos2YaCQnhM",
+      "embedUrl": "https://www.youtube.com/embed/mos2YaCQnhM",
+      "thumbnailUrl": "https://i.ytimg.com/vi/mos2YaCQnhM/hqdefault.jpg?sqp=-oaymwE2CNACELwBSFXyq4qpAygIARUAAIhCGAFwAcABBvABAfgB_gmAAtAFigIMCAAQARgTIGIofzAP&rs=AOn4CLDIwXL5Q5Px7-AH03lk8_z7OBBhmQ",
+      "durationSeconds": 1169,
+      "duration": "19:29",
+      "position": 30,
+      "collection": "Sunday Suspense",
+      "source": "YouTube",
+      "sourceUrl": "https://www.youtube.com/watch?v=mos2YaCQnhM"
+    },
+    {
+      "id": "xZGYbhSkZN8",
+      "title": "Sunday Suspense |Jhau Bungalow-r Rahasya | টেনিদা | Narayan Gangopadhyay | Mirchi Bangla",
+      "youtubeId": "xZGYbhSkZN8",
+      "youtubeUrl": "https://www.youtube.com/watch?v=xZGYbhSkZN8",
+      "embedUrl": "https://www.youtube.com/embed/xZGYbhSkZN8",
+      "thumbnailUrl": "https://i.ytimg.com/vi/xZGYbhSkZN8/hqdefault.jpg?sqp=-oaymwE2CNACELwBSFXyq4qpAygIARUAAIhCGAFwAcABBvABAfgB_gmAAtAFigIMCAAQARgTIE8ofzAP&rs=AOn4CLCGwrXSwUHPwamuven_CgzQY4J2iw",
+      "durationSeconds": 5313,
+      "duration": "1:28:33",
+      "position": 116,
+      "collection": "Sunday Suspense",
+      "source": "YouTube",
+      "sourceUrl": "https://www.youtube.com/watch?v=xZGYbhSkZN8"
+    },
+    {
+      "id": "lvuxzXY5F1w",
+      "title": "Sunday Suspense | Tenida | Kombol Niruddesh | Narayan Gangopadhyay | Mirchi Bangla",
+      "youtubeId": "lvuxzXY5F1w",
+      "youtubeUrl": "https://www.youtube.com/watch?v=lvuxzXY5F1w",
+      "embedUrl": "https://www.youtube.com/embed/lvuxzXY5F1w",
+      "thumbnailUrl": "https://i.ytimg.com/vi/lvuxzXY5F1w/hqdefault.jpg?sqp=-oaymwEcCNACELwBSFXyq4qpAw4IARUAAIhCGAFwAcABBg==&rs=AOn4CLDDB7htKdnAqBHj1r_g9Z9koE44Pw",
+      "durationSeconds": 7558,
+      "duration": "2:05:58",
+      "position": 422,
+      "collection": "Sunday Suspense",
+      "source": "YouTube",
+      "sourceUrl": "https://www.youtube.com/watch?v=lvuxzXY5F1w"
+    }
+  ]
+}
