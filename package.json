@@ -7,7 +7,7 @@
     "dev": "pnpm --parallel --filter client --filter server dev",
     "dev:client": "pnpm --filter client dev",
     "dev:server": "pnpm --filter server dev",
-    "build": "pnpm -r build",
+    "build": "pnpm --filter client build && node -e \"const fs = require('fs'); fs.cpSync('client/dist', 'dist', {recursive: true});\"",
     "lint": "pnpm -r lint"
   },
   "devDependencies": {
