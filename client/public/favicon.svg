@@ -24,13 +24,13 @@
   <!-- Cassette Body -->
   <g filter="url(#glow)">
     <rect x="10" y="15" width="44" height="34" rx="5" fill="url(#tapeGrad)" stroke="url(#goldGrad)" stroke-width="1.8"/>
-    
+
     <!-- Top label line -->
     <path d="M14 19 H50" stroke="#f59e0b" stroke-width="1.2" stroke-linecap="round" stroke-opacity="0.5"/>
 
     <!-- Center tape window -->
     <rect x="16" y="24" width="32" height="15" rx="3" fill="#0d0b09" stroke="#f59e0b" stroke-width="1" stroke-opacity="0.8"/>
-    
+
     <!-- Left Reel Spool -->
     <circle cx="24" cy="31.5" r="5" fill="#1f1b16" stroke="url(#goldGrad)" stroke-width="1.2"/>
     <circle cx="24" cy="31.5" r="2" fill="#f59e0b"/>
