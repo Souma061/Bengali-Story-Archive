@@ -354,7 +354,7 @@ export default function App() {
       {/* ========================================== */}
       <header className="bg-[#0f0e10]/95 backdrop-blur-md sticky top-0 z-40 border-b border-[#504535]/30 shadow-2xl">
         <div className="flex justify-between items-center w-full px-3 sm:px-8 max-w-7xl mx-auto h-16 sm:h-20 gap-2 sm:gap-4">
-          
+
           {/* Brand & Vintage Indicator */}
           <div
             className="flex items-center space-x-2 sm:space-x-3 shrink-0 cursor-pointer group"
@@ -461,60 +461,60 @@ export default function App() {
         {/* SECTION 1: HERO SPOTLIGHT (Cassette Hybrid)*/}
         {/* ========================================== */}
         {currentStory && (
-          <section className="relative w-full rounded-xl bg-[#1c1b1d] border border-[#504535]/30 overflow-hidden shadow-2xl p-6 lg:p-10">
+          <section className="relative w-full rounded-xl bg-[#1c1b1d] border border-[#504535]/30 overflow-hidden shadow-2xl p-3 sm:p-6 lg:p-10">
             {/* Ambient Tube Backlight */}
             <div className="absolute -top-24 right-1/4 w-96 h-96 bg-[#e5a93c]/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 left-10 w-80 h-80 bg-[#8f191f]/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-8 items-center relative z-10">
               {/* Left: Cassette Shell & Tape Spools */}
               <div className="lg:col-span-6 relative">
-                <div className="w-full max-w-sm sm:max-w-lg mx-auto bg-[#0f0e10] rounded-xl p-3 sm:p-5 border border-[#504535]/50 shadow-2xl relative group">
+                <div className="w-full max-w-sm sm:max-w-lg mx-auto bg-[#0f0e10] rounded-xl p-2.5 sm:p-4 border border-[#504535]/50 shadow-2xl relative group">
                   {/* Cassette Screws */}
-                  <div className="absolute top-2 left-2 text-[10px] text-[#9d8f7c] opacity-40 font-mono">
+                  <div className="absolute top-1.5 left-1.5 text-[9px] text-[#9d8f7c] opacity-40 font-mono">
                     ✛
                   </div>
-                  <div className="absolute top-2 right-2 text-[10px] text-[#9d8f7c] opacity-40 font-mono">
+                  <div className="absolute top-1.5 right-1.5 text-[9px] text-[#9d8f7c] opacity-40 font-mono">
                     ✛
                   </div>
-                  <div className="absolute bottom-2 left-2 text-[10px] text-[#9d8f7c] opacity-40 font-mono">
+                  <div className="absolute bottom-1.5 left-1.5 text-[9px] text-[#9d8f7c] opacity-40 font-mono">
                     ✛
                   </div>
-                  <div className="absolute bottom-2 right-2 text-[10px] text-[#9d8f7c] opacity-40 font-mono">
+                  <div className="absolute bottom-1.5 right-1.5 text-[9px] text-[#9d8f7c] opacity-40 font-mono">
                     ✛
                   </div>
 
                   {/* Tape Label Sticker */}
-                  <div className="bg-[#f1e1c0] text-[#221b07] rounded p-3 sm:p-4 border border-[#504535]/60 shadow-sm relative overflow-hidden">
-                    <div className="flex justify-between items-start border-b border-[#221b07]/20 pb-2">
-                      <div>
-                        <span className="font-mono-retro text-[9px] sm:text-[10px] text-[#50462e] uppercase tracking-wider block">
+                  <div className="bg-[#f1e1c0] text-[#221b07] rounded p-2.5 sm:p-4 border border-[#504535]/60 shadow-sm relative overflow-hidden">
+                    <div className="flex justify-between items-start border-b border-[#221b07]/20 pb-1.5">
+                      <div className="min-w-0 pr-2">
+                        <span className="font-mono-retro text-[8px] sm:text-[10px] text-[#50462e] uppercase tracking-wider block">
                           রেডিও সাসপেন্স স্পেশাল • সাইড A
                         </span>
-                        <h3 className="font-serif-bengali text-base sm:text-2xl font-bold text-[#221b07] leading-tight mt-0.5">
+                        <h3 className="font-serif-bengali text-sm sm:text-2xl font-bold text-[#221b07] leading-tight mt-0.5 truncate">
                           {currentStory.cleanTitle || currentStory.title}
                         </h3>
-                        <p className="text-[11px] sm:text-xs text-[#50462e] italic mt-0.5">
+                        <p className="text-[10px] sm:text-xs text-[#50462e] italic mt-0.5 truncate">
                           {currentStory.author || "Sunday Suspense Archive"}
                         </p>
                       </div>
-                      <div className="text-right shrink-0 ml-2">
-                        <div className="inline-block border border-[#221b07]/40 px-1 py-0.5 text-[8px] sm:text-[9px] font-mono-retro font-bold uppercase rounded">
+                      <div className="text-right shrink-0">
+                        <div className="inline-block border border-[#221b07]/40 px-1 py-0.5 text-[8px] sm:text-[9px] font-mono-retro font-bold uppercase rounded leading-none">
                           DOLBY
                         </div>
-                        <span className="block text-[9px] sm:text-[10px] font-mono-retro text-[#50462e] mt-0.5">
+                        <span className="block text-[8px] sm:text-[9px] font-mono-retro text-[#50462e] mt-0.5">
                           C-90
                         </span>
                       </div>
                     </div>
 
                     {/* Tape Window & Spool Wheels */}
-                    <div className="mt-3 sm:mt-4 bg-[#0f0e10] rounded-lg p-2 sm:p-3 flex justify-between items-center border border-[#504535]/30">
+                    <div className="mt-2.5 sm:mt-4 bg-[#0f0e10] rounded-lg p-2 sm:p-3 flex justify-between items-center border border-[#504535]/30">
                       {/* Left Spool */}
                       <div
-                        className={`w-11 h-11 sm:w-16 sm:h-16 rounded-full bg-[#141315] border-3 sm:border-4 border-[#504535]/40 flex items-center justify-center relative shadow-inner shrink-0 ${isPlaying ? "animate-spin-slow" : ""}`}
+                        className={`w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-[#141315] border-2 sm:border-4 border-[#504535]/40 flex items-center justify-center relative shadow-inner shrink-0 ${isPlaying ? "animate-spin-slow" : ""}`}
                       >
-                        <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full bg-[#363436] border border-[#ffc665]/40 flex items-center justify-center">
+                        <div className="w-3.5 h-3.5 sm:w-6 sm:h-6 rounded-full bg-[#363436] border border-[#ffc665]/40 flex items-center justify-center">
                           <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#ffc665]" />
                         </div>
                         <div className="absolute w-full h-0.5 bg-[#504535]/30" />
@@ -522,31 +522,31 @@ export default function App() {
                       </div>
 
                       {/* Tape Gauge Ruler */}
-                      <div className="flex-1 px-2 sm:px-4 flex flex-col items-center">
-                        <div className="w-full flex justify-between text-[8px] sm:text-[9px] font-mono-retro text-[#9d8f7c] mb-0.5 sm:mb-1">
+                      <div className="flex-1 px-2.5 sm:px-4 min-w-0 flex flex-col items-center">
+                        <div className="w-full flex justify-between text-[8px] sm:text-[9px] font-mono-retro text-[#9d8f7c] mb-0.5 px-0.5">
                           <span>100</span>
                           <span>50</span>
                           <span>0</span>
                         </div>
-                        <div className="w-full h-2.5 sm:h-3 bg-[#2b292c] rounded-full overflow-hidden p-0.5 border border-[#504535]/20 flex">
+                        <div className="w-full h-2 sm:h-3 bg-[#2b292c] rounded-full overflow-hidden p-0.5 border border-[#504535]/20 flex">
                           <div
-                            className="h-full bg-amber-900/80 rounded-l transition-all duration-300"
+                            className="h-full bg-gradient-to-r from-amber-900 to-amber-700 rounded-l transition-all duration-300"
                             style={{
                               width: `${Math.max(15, 100 - progressPercent)}%`,
                             }}
                           />
                           <div className="h-full bg-transparent flex-1 border-l border-[#9d8f7c]/40" />
                         </div>
-                        <span className="text-[8px] sm:text-[9px] font-mono-retro text-[#ffc665] mt-1 tracking-widest truncate">
-                          {currentStory.duration} • AUDIO TAPE
+                        <span className="text-[8px] sm:text-[9px] font-mono-retro text-[#ffc665] mt-1 tracking-wider whitespace-nowrap overflow-hidden text-ellipsis">
+                          {currentStory.duration} • HI-FI
                         </span>
                       </div>
 
                       {/* Right Spool */}
                       <div
-                        className={`w-11 h-11 sm:w-16 sm:h-16 rounded-full bg-[#141315] border-3 sm:border-4 border-[#504535]/40 flex items-center justify-center relative shadow-inner shrink-0 ${isPlaying ? "animate-spin-mid" : ""}`}
+                        className={`w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-[#141315] border-2 sm:border-4 border-[#504535]/40 flex items-center justify-center relative shadow-inner shrink-0 ${isPlaying ? "animate-spin-mid" : ""}`}
                       >
-                        <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full bg-[#363436] border border-[#ffc665]/40 flex items-center justify-center">
+                        <div className="w-3.5 h-3.5 sm:w-6 sm:h-6 rounded-full bg-[#363436] border border-[#ffc665]/40 flex items-center justify-center">
                           <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#ffc665]" />
                         </div>
                         <div className="absolute w-full h-0.5 bg-[#504535]/30" />
@@ -555,9 +555,9 @@ export default function App() {
                     </div>
 
                     {/* J-Card Details */}
-                    <div className="mt-2.5 sm:mt-3 flex justify-between items-center font-mono-retro text-[11px] sm:text-xs text-[#50462e] pt-1.5 sm:pt-2 border-t border-[#221b07]/15">
+                    <div className="mt-2 sm:mt-3 flex justify-between items-center font-mono-retro text-[10px] sm:text-xs text-[#50462e] pt-1.5 sm:pt-2 border-t border-[#221b07]/15">
                       <span className="flex items-center gap-1 truncate mr-2">
-                        <Headphones className="w-3.5 h-3.5 text-[#221b07] shrink-0" />{" "}
+                        <Headphones className="w-3 h-3 text-[#221b07] shrink-0" />{" "}
                         কণ্ঠ: রেডিও মিরচি বাংলা
                       </span>
                       <span className="font-bold text-[#221b07] shrink-0">
@@ -567,12 +567,12 @@ export default function App() {
                   </div>
 
                   {/* Tape Trapdoor */}
-                  <div className="mt-2 sm:mt-3 w-32 sm:w-40 mx-auto h-2.5 sm:h-3 bg-[#2b292c] rounded-t-sm border-t border-x border-[#504535]/30" />
+                  <div className="mt-2 w-28 sm:w-40 mx-auto h-2 sm:h-3 bg-[#2b292c] rounded-t-sm border-t border-x border-[#504535]/30" />
                 </div>
               </div>
 
               {/* Right: Story Narrative & Actions */}
-              <div className="lg:col-span-6 space-y-6">
+              <div className="lg:col-span-6 space-y-4 sm:space-y-6">
                 <div className="flex flex-wrap gap-2 items-center">
                   <span className="px-2.5 py-1 rounded bg-[#8f191f] text-[#ffdad7] font-mono-retro text-[10px] uppercase font-bold tracking-wider">
                     নির্বাচিত রহস্য
