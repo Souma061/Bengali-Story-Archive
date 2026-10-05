@@ -197,120 +197,81 @@ export default function App() {
       />
 
       {/* ========================================== */}
-      {/* 1. TOP NAV BAR (Stitch Design)             */}
+      {/* 1. TOP NAV BAR (Clean & Uncluttered)       */}
       {/* ========================================== */}
-      <header className="bg-[#0f0e10]/85 backdrop-blur-md sticky top-0 z-40 border-b border-[#504535]/30 shadow-2xl">
-        <div className="flex justify-between items-center w-full px-6 lg:px-10 max-w-7xl mx-auto h-20">
+      <header className="bg-[#0f0e10]/90 backdrop-blur-md sticky top-0 z-40 border-b border-[#504535]/30 shadow-2xl">
+        <div className="flex justify-between items-center w-full px-4 sm:px-8 max-w-7xl mx-auto h-20 gap-4">
+          
           {/* Brand & Vintage Indicator */}
-          <div className="flex items-center space-x-4">
-            <div
-              className="flex items-center space-x-3 group cursor-pointer"
-              onClick={() => setSelectedCategory("all")}
-            >
-              <div className="w-10 h-10 rounded-full bg-[#201f21] border border-[#504535]/50 flex items-center justify-center text-[#ffc665] group-hover:border-[#ffc665]/60 transition-all shadow-inner">
-                <Radio className="w-5 h-5 text-[#ffc665]" />
-              </div>
-              <div>
-                <span className="text-xl font-serif-bengali font-bold text-[#ffc665] tracking-wide block">
-                  গল্প ঘর (Golpo Ghar)
+          <div
+            className="flex items-center space-x-3 shrink-0 cursor-pointer group"
+            onClick={() => setSelectedCategory("all")}
+          >
+            <div className="w-10 h-10 rounded-full bg-[#201f21] border border-[#504535]/50 flex items-center justify-center text-[#ffc665] group-hover:border-[#ffc665]/60 transition-all shadow-inner">
+              <Radio className="w-5 h-5 text-[#ffc665]" />
+            </div>
+            <div className="whitespace-nowrap">
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-serif-bengali font-bold text-[#ffc665] tracking-wide">
+                  গল্প ঘর
                 </span>
-                <span className="hidden lg:block font-mono-retro text-[9px] text-[#9d8f7c] tracking-widest uppercase">
-                  Radio Drama & Mystery Archive
+                <span className="font-mono-retro text-[10px] text-[#9d8f7c] border-l border-[#504535]/40 pl-2">
+                  Golpo Ghar
                 </span>
               </div>
+              <span className="block font-mono-retro text-[9px] text-[#9d8f7c] tracking-widest uppercase">
+                Radio Drama & Mystery Archive
+              </span>
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-6 font-mono-retro text-xs">
-            <button
-              onClick={() => setSelectedCategory("all")}
-              className={`pb-1 transition-colors cursor-pointer ${
-                selectedCategory === "all"
-                  ? "text-[#ffc665] font-bold border-b-2 border-[#ffc665]"
-                  : "text-[#d4c4b0] hover:text-[#e6e1e4]"
-              }`}
-            >
-              সব গল্প
-            </button>
-            <button
-              onClick={() => setSelectedCategory("feluda")}
-              className={`pb-1 transition-colors cursor-pointer ${
-                selectedCategory === "feluda"
-                  ? "text-[#ffc665] font-bold border-b-2 border-[#ffc665]"
-                  : "text-[#d4c4b0] hover:text-[#e6e1e4]"
-              }`}
-            >
-              ফেলুদা
-            </button>
-            <button
-              onClick={() => setSelectedCategory("byomkesh")}
-              className={`pb-1 transition-colors cursor-pointer ${
-                selectedCategory === "byomkesh"
-                  ? "text-[#ffc665] font-bold border-b-2 border-[#ffc665]"
-                  : "text-[#d4c4b0] hover:text-[#e6e1e4]"
-              }`}
-            >
-              ব্যোমকেশ
-            </button>
-            <button
-              onClick={() => setSelectedCategory("professor_shonku")}
-              className={`pb-1 transition-colors cursor-pointer ${
-                selectedCategory === "professor_shonku"
-                  ? "text-[#ffc665] font-bold border-b-2 border-[#ffc665]"
-                  : "text-[#d4c4b0] hover:text-[#e6e1e4]"
-              }`}
-            >
-              প্রফেসর শঙ্কু
-            </button>
-            <button
-              onClick={() => setSelectedCategory("sherlock_holmes")}
-              className={`pb-1 transition-colors cursor-pointer ${
-                selectedCategory === "sherlock_holmes"
-                  ? "text-[#ffc665] font-bold border-b-2 border-[#ffc665]"
-                  : "text-[#d4c4b0] hover:text-[#e6e1e4]"
-              }`}
-            >
-              শার্লক হোমস
-            </button>
-          </nav>
-
-          {/* Trailing Controls: Search, Frequency, Realtime Kolkata Clock, Tune Mystery */}
-          <div className="flex items-center space-x-3 sm:space-x-4">
-            {/* Quick Search Button (opens Command Palette) */}
+          {/* Center: Integrated Spotlight Search Bar */}
+          <div className="flex-1 max-w-md mx-2 hidden md:block">
             <button
               onClick={() => setIsSearchModalOpen(true)}
-              className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-[#201f21] hover:bg-[#2b292c] border border-[#504535]/40 text-xs font-mono-retro text-[#d4c4b0] hover:text-[#ffc665] transition-all cursor-pointer shadow-sm"
-              title="সার্চ করুন (Ctrl + K)"
+              className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-[#141315] hover:bg-[#1c1b1d] border border-[#504535]/40 hover:border-[#ffc665]/60 text-xs text-[#9d8f7c] hover:text-[#e6e1e4] transition-all shadow-inner group cursor-pointer"
             >
-              <Search className="w-3.5 h-3.5 text-[#ffc665]" />
-              <span className="hidden sm:inline">খুঁজুন</span>
-              <kbd className="hidden md:inline px-1.5 py-0.2 rounded bg-[#0f0e10] border border-[#504535]/30 text-[10px] text-[#9d8f7c]">
+              <span className="flex items-center gap-2.5">
+                <Search className="w-4 h-4 text-[#ffc665] group-hover:scale-110 transition-transform" />
+                <span className="font-sans">গল্প, লেখক বা চরিত্র খুঁজুন...</span>
+              </span>
+              <kbd className="px-1.5 py-0.5 rounded bg-[#201f21] border border-[#504535]/40 text-[10px] font-mono-retro text-[#ffc665]">
                 ⌘K
               </kbd>
             </button>
+          </div>
 
-            {/* Frequency Dial Badge */}
-            <div className="hidden xl:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-[#1c1b1d] border border-[#504535]/30 font-mono-retro text-xs">
-              <span className="inline-block w-2 h-2 rounded-full bg-[#ffc665] animate-pulse" />
-              <span className="text-[#ddcdae]">Hi-Fi 98.3 MHz</span>
-            </div>
+          {/* Right: Unified Telemetry Pill & Tune Mystery Action */}
+          <div className="flex items-center space-x-2.5 sm:space-x-3 shrink-0">
+            {/* Mobile Search Icon Button */}
+            <button
+              onClick={() => setIsSearchModalOpen(true)}
+              className="md:hidden p-2 rounded-lg bg-[#201f21] border border-[#504535]/40 text-[#ffc665] hover:bg-[#2b292c] transition cursor-pointer"
+              title="সার্চ করুন"
+            >
+              <Search className="w-4 h-4" />
+            </button>
 
-            {/* Real-time Kolkata Clock */}
-            <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-[#201f21] border border-[#504535]/40 font-mono-retro text-xs text-[#e6e1e4]">
+            {/* Unified Radio Telemetry Pill */}
+            <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-[#1c1b1d] border border-[#504535]/40 font-mono-retro text-xs text-[#d4c4b0] shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-[#ffc665] animate-pulse" />
+              <span className="text-[#ddcdae]">98.3 MHz</span>
+              <span className="text-[#504535]">|</span>
               <Clock className="w-3.5 h-3.5 text-[#ffc665]" />
-              <span className="tracking-wider">{kolkataTime}</span>
+              <span>{kolkataTime}</span>
             </div>
 
             {/* Tune Mystery Button */}
             <button
               onClick={handleTuneRandom}
-              className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-[#e5a93c] text-[#5e4000] font-mono-retro text-xs font-bold hover:bg-[#ffc665] transition-all active:scale-95 shadow-md shadow-[#e5a93c]/20 cursor-pointer"
+              className="flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-lg bg-[#e5a93c] text-[#5e4000] font-mono-retro text-xs font-bold hover:bg-[#ffc665] transition-all active:scale-95 shadow-md shadow-[#e5a93c]/20 cursor-pointer"
+              title="একটি রহস্যময় গল্প শুনুন"
             >
               <Shuffle className="w-4 h-4" />
-              <span className="hidden sm:inline">Tune Mystery</span>
+              <span className="hidden sm:inline whitespace-nowrap">Tune Mystery</span>
             </button>
           </div>
+
         </div>
       </header>
 
