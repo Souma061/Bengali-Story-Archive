@@ -22,6 +22,17 @@ import type { Story, CollectionItem } from "./types";
 import { getStaticStories, getStaticCollections } from "./staticData";
 import { YouTubeAudioEngine } from "./components/YouTubeAudioEngine";
 import { SearchModal } from "./components/SearchModal";
+import { SpeedSelector } from "./components/SpeedSelector";
+import { SleepTimerMenu, type SleepTimerOption } from "./components/SleepTimerMenu";
+import {
+  saveStoryProgress,
+  getStoryProgress,
+  getAllStoryProgress,
+  clearStoryProgress,
+  saveLastPlayedStoryId,
+  getLastPlayedStoryId,
+  type StoryProgress,
+} from "./storage";
 
 // Format seconds into MM:SS or H:MM:SS
 function formatDuration(seconds: number): string {
@@ -46,6 +57,12 @@ export default function App() {
   const [volume, setVolume] = useState<number>(85);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [seekTime, setSeekTime] = useState<number | null>(null);
+  const [playbackRate, setPlaybackRate] = useState<number>(1.0);
+  const [sleepTimerOption, setSleepTimerOption] = useState<SleepTimerOption>("off");
+  const [sleepTimerRemaining, setSleepTimerRemaining] = useState<number | null>(null);
+  const [sleepToastMessage, setSleepToastMessage] = useState<string | null>(null);
+  const [resumeTime, setResumeTime] = useState<number>(0);
+  const [storyProgressMap, setStoryProgressMap] = useState<Record<string, StoryProgress>>(() => getAllStoryProgress());
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
@@ -83,7 +100,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch stories & collections
+  // Fetch stories & collections + Restore last played session
   useEffect(() => {
     fetch("/api/collections")
       .then((res) => (res.ok ? res.json() : null))
@@ -93,24 +110,65 @@ export default function App() {
       })
       .catch(() => setCollections(getStaticCollections()));
 
+    const initStories = (stories: Story[]) => {
+      setAllStories(stories);
+      const lastId = getLastPlayedStoryId();
+      const matched = (lastId && stories.find((s) => s.id === lastId)) || stories[0];
+      if (matched) {
+        setCurrentStory(matched);
+        const savedProg = getStoryProgress(matched.id);
+        if (savedProg && savedProg.currentTime > 5) {
+          setCurrentTime(savedProg.currentTime);
+          setResumeTime(savedProg.currentTime);
+          if (savedProg.duration) setDuration(savedProg.duration);
+        } else {
+          setDuration(matched.durationSeconds || 0);
+        }
+      }
+    };
+
     fetch("/api/stories?limit=600")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.stories?.length > 0) {
-          setAllStories(data.stories);
-          setCurrentStory((prev) => prev || data.stories[0]);
+          initStories(data.stories);
         } else {
-          const fallback = getStaticStories();
-          setAllStories(fallback);
-          setCurrentStory((prev) => prev || fallback[0]);
+          initStories(getStaticStories());
         }
       })
       .catch(() => {
-        const fallback = getStaticStories();
-        setAllStories(fallback);
-        setCurrentStory((prev) => prev || fallback[0]);
+        initStories(getStaticStories());
       });
   }, []);
+
+  // Save exact timestamp whenever audio is paused
+  useEffect(() => {
+    if (!isPlaying && currentStory && currentTime > 3) {
+      saveStoryProgress(currentStory.id, currentTime, duration);
+      setStoryProgressMap(getAllStoryProgress());
+    }
+  }, [isPlaying]);
+
+  // Periodic autosave every 5 seconds while playing
+  useEffect(() => {
+    if (!isPlaying || !currentStory || currentTime <= 3) return;
+    const timer = setInterval(() => {
+      saveStoryProgress(currentStory.id, currentTime, duration);
+      setStoryProgressMap(getAllStoryProgress());
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [isPlaying, currentStory?.id, Math.floor(currentTime / 5), duration]);
+
+  // Save exact timestamp before tab/window closes
+  useEffect(() => {
+    const handleUnload = () => {
+      if (currentStory && currentTime > 3) {
+        saveStoryProgress(currentStory.id, currentTime, duration);
+      }
+    };
+    window.addEventListener("beforeunload", handleUnload);
+    return () => window.removeEventListener("beforeunload", handleUnload);
+  }, [currentStory?.id, currentTime, duration]);
 
   // Filtered stories for catalogue with smart aliases
   const filteredStories = useMemo(() => {
@@ -129,12 +187,39 @@ export default function App() {
     return list;
   }, [allStories, selectedCategory, searchQuery]);
 
-  // Audio Playback Controls
-  const handleSelectStory = (story: Story) => {
+  // Audio Playback Controls with Smart Resume
+  const handleSelectStory = (story: Story, forceStartFromBeginning = false) => {
+    saveLastPlayedStoryId(story.id);
+    const saved = getStoryProgress(story.id);
+    const startTime =
+      !forceStartFromBeginning &&
+      saved &&
+      saved.currentTime > 5 &&
+      saved.currentTime < (saved.duration || story.durationSeconds || 100) - 10
+        ? saved.currentTime
+        : 0;
+
     setCurrentStory(story);
     setIsPlaying(true);
-    setCurrentTime(0);
-    setDuration(story.durationSeconds || 0);
+    setCurrentTime(startTime);
+    setResumeTime(startTime);
+    setDuration(story.durationSeconds || saved?.duration || 0);
+
+    if (startTime > 0) {
+      setSleepToastMessage(
+        `⏱️ আগের অবস্থান থেকে শুরু হচ্ছে (${formatDuration(startTime)})`
+      );
+      setTimeout(() => setSleepToastMessage(null), 3500);
+    }
+  };
+
+  const handleRestartCurrentStory = () => {
+    if (!currentStory) return;
+    clearStoryProgress(currentStory.id);
+    setStoryProgressMap(getAllStoryProgress());
+    handleSeek(0);
+    setSleepToastMessage("⏮️ গল্পটি শুরু থেকে বাজছে");
+    setTimeout(() => setSleepToastMessage(null), 3000);
   };
 
   const handleTogglePlay = () => {
@@ -180,46 +265,114 @@ export default function App() {
   const progressPercent =
     duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
 
+  // Sleep Timer countdown effect
+  useEffect(() => {
+    if (sleepTimerRemaining === null || sleepTimerRemaining <= 0 || !isPlaying) return;
+
+    const interval = setInterval(() => {
+      setSleepTimerRemaining((prev) => {
+        if (prev === null || prev <= 1) {
+          setIsPlaying(false);
+          setSleepTimerOption("off");
+          setSleepToastMessage("🌙 ঘুমের টাইমার শেষ হয়েছে—অডিও থামানো হয়েছে। শুভ রাত্রি!");
+          setTimeout(() => setSleepToastMessage(null), 6000);
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [sleepTimerRemaining, isPlaying]);
+
+  const handleSetSleepTimer = (option: SleepTimerOption) => {
+    setSleepTimerOption(option);
+    if (option === "off") {
+      setSleepTimerRemaining(null);
+      setSleepToastMessage(null);
+    } else if (option === "end_of_story") {
+      setSleepTimerRemaining(null);
+      setSleepToastMessage("🌙 বর্তমান গল্প শেষে অডিও স্বয়ংক্রিয়ভাবে বন্ধ হবে");
+      setTimeout(() => setSleepToastMessage(null), 4000);
+    } else {
+      const mins = parseInt(option, 10);
+      setSleepTimerRemaining(mins * 60);
+      setSleepToastMessage(`🌙 ঘুমের টাইমার চালু: ${mins} মিনিট পর অডিও বন্ধ হবে`);
+      setTimeout(() => setSleepToastMessage(null), 4000);
+    }
+  };
+
+  const handleSongEnded = () => {
+    if (currentStory) {
+      clearStoryProgress(currentStory.id);
+      setStoryProgressMap(getAllStoryProgress());
+    }
+    if (sleepTimerOption === "end_of_story") {
+      setIsPlaying(false);
+      setSleepTimerOption("off");
+      setSleepToastMessage("🌙 গল্পটি সমাপ্ত হয়েছে—ঘুমের টাইমার অনুযায়ী অডিও বন্ধ হলো।");
+      setTimeout(() => setSleepToastMessage(null), 6000);
+      return;
+    }
+    handleNextStory();
+  };
+
   return (
     <div className="min-h-screen flex flex-col font-sans text-[#e6e1e4] pb-32">
+      {/* Toast Notification Banner */}
+      {sleepToastMessage && (
+        <div className="fixed top-24 right-4 sm:right-8 z-50 flex items-center space-x-2.5 px-4 py-3 rounded-xl bg-[#141315]/95 border border-[#ffc665]/50 text-[#ffc665] text-xs font-serif-bengali shadow-2xl backdrop-blur-md animate-in slide-in-from-top-2 duration-200">
+          <span className="w-2 h-2 rounded-full bg-[#ffc665] animate-ping shrink-0" />
+          <span>{sleepToastMessage}</span>
+          <button
+            onClick={() => setSleepToastMessage(null)}
+            className="ml-2 text-[#9d8f7c] hover:text-[#e6e1e4] cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Background YouTube Audio Engine (Audio-only, no video box) */}
       <YouTubeAudioEngine
         youtubeId={currentStory?.youtubeId || null}
         isPlaying={isPlaying}
         volume={isMuted ? 0 : volume}
+        playbackRate={playbackRate}
+        startSeconds={resumeTime}
         seekTime={seekTime}
         onTimeUpdate={(curr, dur) => {
           setCurrentTime(curr);
           if (dur > 0) setDuration(dur);
         }}
         onStateChange={(playing) => setIsPlaying(playing)}
-        onEnded={handleNextStory}
+        onEnded={handleSongEnded}
       />
 
       {/* ========================================== */}
-      {/* 1. TOP NAV BAR (Clean & Uncluttered)       */}
+      {/* 1. TOP NAV BAR (Clean & Uncluttered, Mobile-First) */}
       {/* ========================================== */}
-      <header className="bg-[#0f0e10]/90 backdrop-blur-md sticky top-0 z-40 border-b border-[#504535]/30 shadow-2xl">
-        <div className="flex justify-between items-center w-full px-4 sm:px-8 max-w-7xl mx-auto h-20 gap-4">
+      <header className="bg-[#0f0e10]/95 backdrop-blur-md sticky top-0 z-40 border-b border-[#504535]/30 shadow-2xl">
+        <div className="flex justify-between items-center w-full px-3 sm:px-8 max-w-7xl mx-auto h-16 sm:h-20 gap-2 sm:gap-4">
           
           {/* Brand & Vintage Indicator */}
           <div
-            className="flex items-center space-x-3 shrink-0 cursor-pointer group"
+            className="flex items-center space-x-2 sm:space-x-3 shrink-0 cursor-pointer group"
             onClick={() => setSelectedCategory("all")}
           >
-            <div className="w-10 h-10 rounded-full bg-[#201f21] border border-[#504535]/50 flex items-center justify-center text-[#ffc665] group-hover:border-[#ffc665]/60 transition-all shadow-inner">
-              <Radio className="w-5 h-5 text-[#ffc665]" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#201f21] border border-[#504535]/50 flex items-center justify-center text-[#ffc665] group-hover:border-[#ffc665]/60 transition-all shadow-inner">
+              <Radio className="w-4 h-4 sm:w-5 sm:h-5 text-[#ffc665]" />
             </div>
             <div className="whitespace-nowrap">
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-serif-bengali font-bold text-[#ffc665] tracking-wide">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="text-lg sm:text-xl font-serif-bengali font-bold text-[#ffc665] tracking-wide">
                   গল্প ঘর
                 </span>
-                <span className="font-mono-retro text-[10px] text-[#9d8f7c] border-l border-[#504535]/40 pl-2">
+                <span className="font-mono-retro text-[9px] sm:text-[10px] text-[#9d8f7c] border-l border-[#504535]/40 pl-1.5 sm:pl-2">
                   Golpo Ghar
                 </span>
               </div>
-              <span className="block font-mono-retro text-[9px] text-[#9d8f7c] tracking-widest uppercase">
+              <span className="hidden sm:block font-mono-retro text-[9px] text-[#9d8f7c] tracking-widest uppercase">
                 Radio Drama & Mystery Archive
               </span>
             </div>
@@ -242,7 +395,7 @@ export default function App() {
           </div>
 
           {/* Right: Unified Telemetry Pill & Tune Mystery Action */}
-          <div className="flex items-center space-x-2.5 sm:space-x-3 shrink-0">
+          <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
             {/* Mobile Search Icon Button */}
             <button
               onClick={() => setIsSearchModalOpen(true)}
@@ -264,7 +417,7 @@ export default function App() {
             {/* Tune Mystery Button */}
             <button
               onClick={handleTuneRandom}
-              className="flex items-center space-x-2 px-3.5 sm:px-4 py-2 rounded-lg bg-[#e5a93c] text-[#5e4000] font-mono-retro text-xs font-bold hover:bg-[#ffc665] transition-all active:scale-95 shadow-md shadow-[#e5a93c]/20 cursor-pointer"
+              className="flex items-center space-x-1.5 p-2 sm:px-4 sm:py-2 rounded-lg bg-[#e5a93c] text-[#5e4000] font-mono-retro text-xs font-bold hover:bg-[#ffc665] transition-all active:scale-95 shadow-md shadow-[#e5a93c]/20 cursor-pointer shrink-0"
               title="একটি রহস্যময় গল্প শুনুন"
             >
               <Shuffle className="w-4 h-4" />
@@ -278,20 +431,20 @@ export default function App() {
       {/* ========================================== */}
       {/* MAIN EDITORIAL CANVAS                      */}
       {/* ========================================== */}
-      <main className="w-full max-w-7xl mx-auto px-6 lg:px-10 pt-8 space-y-12">
+      <main className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-10 pt-4 sm:pt-8 space-y-6 sm:space-y-12">
         {/* Sub-Ticker Frequency Line */}
-        <div className="w-full bg-[#0f0e10]/60 border border-[#504535]/20 rounded-lg p-3 flex flex-wrap justify-between items-center font-mono-retro text-xs text-[#d4c4b0] gap-3">
-          <div className="flex items-center space-x-3">
-            <span className="px-2 py-0.5 rounded bg-[#8f191f] text-[#ff9e99] text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
+        <div className="w-full bg-[#0f0e10]/60 border border-[#504535]/20 rounded-lg p-2.5 sm:p-3 flex flex-wrap justify-between items-center font-mono-retro text-xs text-[#d4c4b0] gap-2 sm:gap-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <span className="px-2 py-0.5 rounded bg-[#8f191f] text-[#ff9e99] text-[9px] sm:text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 shrink-0">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
               অন-এয়ার
             </span>
-            <span className="text-[#ddcdae] font-serif-bengali text-xs">
+            <span className="text-[#ddcdae] font-serif-bengali text-xs leading-snug">
               বাংলা ও বিশ্বসাহিত্যের কিছু রোমাঞ্চকর গল্প দিয়ে সাজানো আমাদের এই
               বিশেষ নিবেদন—সানডে সাসপেন্স।
             </span>
           </div>
-          <div className="flex items-center space-x-6 text-[11px]">
+          <div className="hidden sm:flex items-center space-x-6 text-[11px]">
             <span className="flex items-center gap-1">
               <span className="text-[#ffc665] font-bold">৩২০ Kbps</span> স্টুডিও
               এনালগ মাস্টার
@@ -316,7 +469,7 @@ export default function App() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
               {/* Left: Cassette Shell & Tape Spools */}
               <div className="lg:col-span-6 relative">
-                <div className="w-full max-w-lg mx-auto bg-[#0f0e10] rounded-xl p-5 border border-[#504535]/50 shadow-2xl relative group">
+                <div className="w-full max-w-sm sm:max-w-lg mx-auto bg-[#0f0e10] rounded-xl p-3 sm:p-5 border border-[#504535]/50 shadow-2xl relative group">
                   {/* Cassette Screws */}
                   <div className="absolute top-2 left-2 text-[10px] text-[#9d8f7c] opacity-40 font-mono">
                     ✛
@@ -332,50 +485,50 @@ export default function App() {
                   </div>
 
                   {/* Tape Label Sticker */}
-                  <div className="bg-[#f1e1c0] text-[#221b07] rounded p-4 border border-[#504535]/60 shadow-sm relative overflow-hidden">
+                  <div className="bg-[#f1e1c0] text-[#221b07] rounded p-3 sm:p-4 border border-[#504535]/60 shadow-sm relative overflow-hidden">
                     <div className="flex justify-between items-start border-b border-[#221b07]/20 pb-2">
                       <div>
-                        <span className="font-mono-retro text-[10px] text-[#50462e] uppercase tracking-wider block">
+                        <span className="font-mono-retro text-[9px] sm:text-[10px] text-[#50462e] uppercase tracking-wider block">
                           রেডিও সাসপেন্স স্পেশাল • সাইড A
                         </span>
-                        <h3 className="font-serif-bengali text-xl sm:text-2xl font-bold text-[#221b07] leading-tight mt-0.5">
+                        <h3 className="font-serif-bengali text-base sm:text-2xl font-bold text-[#221b07] leading-tight mt-0.5">
                           {currentStory.cleanTitle || currentStory.title}
                         </h3>
-                        <p className="text-xs text-[#50462e] italic mt-0.5">
+                        <p className="text-[11px] sm:text-xs text-[#50462e] italic mt-0.5">
                           {currentStory.author || "Sunday Suspense Archive"}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <div className="inline-block border border-[#221b07]/40 px-1.5 py-0.5 text-[9px] font-mono-retro font-bold uppercase rounded">
-                          DOLBY SYSTEM
+                      <div className="text-right shrink-0 ml-2">
+                        <div className="inline-block border border-[#221b07]/40 px-1 py-0.5 text-[8px] sm:text-[9px] font-mono-retro font-bold uppercase rounded">
+                          DOLBY
                         </div>
-                        <span className="block text-[10px] font-mono-retro text-[#50462e] mt-1">
-                          C-90 CHROME
+                        <span className="block text-[9px] sm:text-[10px] font-mono-retro text-[#50462e] mt-0.5">
+                          C-90
                         </span>
                       </div>
                     </div>
 
                     {/* Tape Window & Spool Wheels */}
-                    <div className="mt-4 bg-[#0f0e10] rounded-lg p-3 flex justify-between items-center border border-[#504535]/30">
+                    <div className="mt-3 sm:mt-4 bg-[#0f0e10] rounded-lg p-2 sm:p-3 flex justify-between items-center border border-[#504535]/30">
                       {/* Left Spool */}
                       <div
-                        className={`w-16 h-16 rounded-full bg-[#141315] border-4 border-[#504535]/40 flex items-center justify-center relative shadow-inner ${isPlaying ? "animate-spin-slow" : ""}`}
+                        className={`w-11 h-11 sm:w-16 sm:h-16 rounded-full bg-[#141315] border-3 sm:border-4 border-[#504535]/40 flex items-center justify-center relative shadow-inner shrink-0 ${isPlaying ? "animate-spin-slow" : ""}`}
                       >
-                        <div className="w-6 h-6 rounded-full bg-[#363436] border border-[#ffc665]/40 flex items-center justify-center">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#ffc665]" />
+                        <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full bg-[#363436] border border-[#ffc665]/40 flex items-center justify-center">
+                          <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#ffc665]" />
                         </div>
                         <div className="absolute w-full h-0.5 bg-[#504535]/30" />
                         <div className="absolute h-full w-0.5 bg-[#504535]/30" />
                       </div>
 
                       {/* Tape Gauge Ruler */}
-                      <div className="flex-1 px-4 flex flex-col items-center">
-                        <div className="w-full flex justify-between text-[9px] font-mono-retro text-[#9d8f7c] mb-1">
+                      <div className="flex-1 px-2 sm:px-4 flex flex-col items-center">
+                        <div className="w-full flex justify-between text-[8px] sm:text-[9px] font-mono-retro text-[#9d8f7c] mb-0.5 sm:mb-1">
                           <span>100</span>
                           <span>50</span>
                           <span>0</span>
                         </div>
-                        <div className="w-full h-3 bg-[#2b292c] rounded-full overflow-hidden p-0.5 border border-[#504535]/20 flex">
+                        <div className="w-full h-2.5 sm:h-3 bg-[#2b292c] rounded-full overflow-hidden p-0.5 border border-[#504535]/20 flex">
                           <div
                             className="h-full bg-amber-900/80 rounded-l transition-all duration-300"
                             style={{
@@ -384,17 +537,17 @@ export default function App() {
                           />
                           <div className="h-full bg-transparent flex-1 border-l border-[#9d8f7c]/40" />
                         </div>
-                        <span className="text-[9px] font-mono-retro text-[#ffc665] mt-1 tracking-widest">
+                        <span className="text-[8px] sm:text-[9px] font-mono-retro text-[#ffc665] mt-1 tracking-widest truncate">
                           {currentStory.duration} • AUDIO TAPE
                         </span>
                       </div>
 
                       {/* Right Spool */}
                       <div
-                        className={`w-16 h-16 rounded-full bg-[#141315] border-4 border-[#504535]/40 flex items-center justify-center relative shadow-inner ${isPlaying ? "animate-spin-mid" : ""}`}
+                        className={`w-11 h-11 sm:w-16 sm:h-16 rounded-full bg-[#141315] border-3 sm:border-4 border-[#504535]/40 flex items-center justify-center relative shadow-inner shrink-0 ${isPlaying ? "animate-spin-mid" : ""}`}
                       >
-                        <div className="w-6 h-6 rounded-full bg-[#363436] border border-[#ffc665]/40 flex items-center justify-center">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#ffc665]" />
+                        <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full bg-[#363436] border border-[#ffc665]/40 flex items-center justify-center">
+                          <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#ffc665]" />
                         </div>
                         <div className="absolute w-full h-0.5 bg-[#504535]/30" />
                         <div className="absolute h-full w-0.5 bg-[#504535]/30" />
@@ -402,19 +555,19 @@ export default function App() {
                     </div>
 
                     {/* J-Card Details */}
-                    <div className="mt-3 flex justify-between items-center font-mono-retro text-xs text-[#50462e] pt-2 border-t border-[#221b07]/15">
-                      <span className="flex items-center gap-1">
-                        <Headphones className="w-3.5 h-3.5 text-[#221b07]" />{" "}
+                    <div className="mt-2.5 sm:mt-3 flex justify-between items-center font-mono-retro text-[11px] sm:text-xs text-[#50462e] pt-1.5 sm:pt-2 border-t border-[#221b07]/15">
+                      <span className="flex items-center gap-1 truncate mr-2">
+                        <Headphones className="w-3.5 h-3.5 text-[#221b07] shrink-0" />{" "}
                         কণ্ঠ: রেডিও মিরচি বাংলা
                       </span>
-                      <span className="font-bold text-[#221b07]">
+                      <span className="font-bold text-[#221b07] shrink-0">
                         {currentStory.duration}
                       </span>
                     </div>
                   </div>
 
                   {/* Tape Trapdoor */}
-                  <div className="mt-3 w-40 mx-auto h-3 bg-[#2b292c] rounded-t-sm border-t border-x border-[#504535]/30" />
+                  <div className="mt-2 sm:mt-3 w-32 sm:w-40 mx-auto h-2.5 sm:h-3 bg-[#2b292c] rounded-t-sm border-t border-x border-[#504535]/30" />
                 </div>
               </div>
 
@@ -482,10 +635,10 @@ export default function App() {
                 </div>
 
                 {/* Primary Play Action & Buttons */}
-                <div className="flex flex-wrap items-center gap-4 pt-2">
+                <div className="flex flex-wrap items-center gap-2.5 sm:gap-4 pt-2">
                   <button
                     onClick={handleTogglePlay}
-                    className="flex items-center space-x-3 px-8 py-4 rounded-xl bg-[#e5a93c] text-[#5e4000] font-serif-bengali text-base font-bold glow-amber hover:bg-[#ffc665] active:scale-95 transition-all cursor-pointer"
+                    className="w-full sm:w-auto flex items-center justify-center space-x-3 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl bg-[#e5a93c] text-[#5e4000] font-serif-bengali text-sm sm:text-base font-bold glow-amber hover:bg-[#ffc665] active:scale-95 transition-all cursor-pointer shadow-lg"
                   >
                     {isPlaying ? (
                       <Pause className="w-5 h-5 fill-current" />
@@ -501,20 +654,31 @@ export default function App() {
 
                   <button
                     onClick={handleNextStory}
-                    className="flex items-center space-x-2 px-5 py-3.5 rounded-xl bg-[#2b292c] text-[#e6e1e4] border border-[#504535]/40 hover:border-[#ffc665]/50 hover:text-[#ffc665] transition-all active:scale-95 text-xs font-mono-retro cursor-pointer"
+                    className="flex-1 sm:flex-initial flex items-center justify-center space-x-2 px-3.5 sm:px-5 py-3 sm:py-3.5 rounded-xl bg-[#2b292c] text-[#e6e1e4] border border-[#504535]/40 hover:border-[#ffc665]/50 hover:text-[#ffc665] transition-all active:scale-95 text-xs font-mono-retro cursor-pointer"
                   >
-                    <span>ক্যাসেট বদলে নিন</span>
+                    <span>ক্যাসেট বদল</span>
                   </button>
+
+                  {currentTime > 10 && (
+                    <button
+                      onClick={handleRestartCurrentStory}
+                      className="flex-1 sm:flex-initial flex items-center justify-center space-x-1.5 px-3.5 sm:px-4 py-3 sm:py-3.5 rounded-xl bg-[#201f21] text-[#d4c4b0] border border-[#504535]/40 hover:border-[#ffc665]/50 hover:text-[#ffc665] transition-all text-xs font-mono-retro cursor-pointer"
+                      title="গল্পটি আবার শুরু থেকে শুনুন"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>শুরু থেকে</span>
+                    </button>
+                  )}
 
                   <a
                     href={currentStory.youtubeUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-4 py-3.5 rounded-xl bg-[#8f191f]/60 hover:bg-[#8f191f] text-[#ffdad7] border border-[#ffb3ae]/20 text-xs font-mono-retro font-semibold transition cursor-pointer"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-3 sm:py-3.5 rounded-xl bg-[#8f191f]/60 hover:bg-[#8f191f] text-[#ffdad7] border border-[#ffb3ae]/20 text-xs font-mono-retro font-semibold transition cursor-pointer"
                     title="মূল ভিডিওটি YouTube-এ খুলুন"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    <span>ইউটিউব লিংক</span>
+                    <span>ইউটিউব</span>
                   </a>
                 </div>
               </div>
@@ -620,6 +784,18 @@ export default function App() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredStories.slice(0, 30).map((story, idx) => {
               const isCurrent = currentStory?.id === story.id;
+              const savedProgress = storyProgressMap[story.id];
+              const hasProgress = savedProgress && savedProgress.currentTime > 5;
+              const progressPct =
+                hasProgress && (savedProgress.duration || story.durationSeconds || 0) > 0
+                  ? Math.min(
+                      100,
+                      (savedProgress.currentTime /
+                        (savedProgress.duration || story.durationSeconds || 1)) *
+                        100
+                    )
+                  : 0;
+
               return (
                 <div
                   key={story.id}
@@ -660,6 +836,25 @@ export default function App() {
                     <p className="text-xs text-[#9d8f7c] mt-0.5 truncate">
                       {story.author || "Sunday Suspense Audio Drama"}
                     </p>
+
+                    {/* Resume playback progress bar on card */}
+                    {hasProgress && (
+                      <div className="mt-3 pt-2 border-t border-[#504535]/20">
+                        <div className="flex items-center justify-between text-[10px] font-mono-retro text-[#ffc665] mb-1">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {formatDuration(savedProgress.currentTime)} পর্যন্ত শোনা
+                          </span>
+                          <span>{Math.round(progressPct)}%</span>
+                        </div>
+                        <div className="w-full h-1 bg-[#201f21] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-[#e5a93c] to-[#ffc665] rounded-full transition-all"
+                            style={{ width: `${progressPct}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Bottom Audio Meta & Action */}
@@ -784,9 +979,128 @@ export default function App() {
           {/* Glowing Cathode Light Guide Filament Line */}
           <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-[#e5a93c] to-transparent opacity-60" />
 
-          <div className="max-w-7xl mx-auto px-4 lg:px-8 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+          {/* Edge-to-edge interactive scrubber track */}
+          <div className="relative w-full h-2 cursor-pointer group py-0.5 -mt-0.5 flex items-center">
+            <input
+              type="range"
+              min={0}
+              max={duration || 100}
+              value={currentTime}
+              onChange={(e) => handleSeek(Number(e.target.value))}
+              className="w-full h-1 bg-[#363436] rounded-none appearance-none cursor-pointer accent-[#ffc665] focus:outline-none"
+              style={{
+                background: `linear-gradient(to right, #ffc665 0%, #ffc665 ${progressPercent}%, rgba(255, 255, 255, 0.12) ${progressPercent}%, rgba(255, 255, 255, 0.12) 100%)`,
+              }}
+            />
+          </div>
+
+          {/* ========================================================= */}
+          {/* MOBILE DOCK VIEW (< md): Sleek 2-Row Layout               */}
+          {/* ========================================================= */}
+          <div className="md:hidden px-3.5 pt-1.5 pb-2.5 space-y-1.5 max-w-lg mx-auto">
+            {/* Top row: Track Info & YouTube icon */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center space-x-2.5 truncate">
+                <div
+                  className={`w-8 h-8 rounded-full vinyl-grooves border border-[#ffc665]/40 flex items-center justify-center shrink-0 shadow ${
+                    isPlaying ? "animate-spin-slow" : ""
+                  }`}
+                >
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#e5a93c]" />
+                </div>
+                <div className="truncate">
+                  <h6 className="font-serif-bengali text-xs font-bold text-[#e6e1e4] truncate">
+                    {currentStory.cleanTitle}
+                  </h6>
+                  <p className="text-[10px] text-[#9d8f7c] truncate">
+                    {currentStory.author || "সানডে সাসপেন্স"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Right: Time stamp & YT button */}
+              <div className="flex items-center space-x-2 shrink-0 font-mono-retro text-[10px] text-[#ffc665]">
+                <span>
+                  {formatDuration(currentTime)} / {duration > 0 ? formatDuration(duration) : currentStory.duration}
+                </span>
+                <a
+                  href={currentStory.youtubeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="YouTube-এ শুনুন"
+                  className="p-1.5 rounded-lg bg-[#8f191f] text-[#ffdad7] hover:bg-[#8f191f]/80 transition flex items-center justify-center"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+
+            {/* Bottom row: Symmetrical Transport Bar */}
+            <div className="flex items-center justify-between pt-0.5">
+              <SpeedSelector
+                currentSpeed={playbackRate}
+                onSelectSpeed={setPlaybackRate}
+              />
+
+              <button
+                onClick={handlePrevStory}
+                className="text-[#9d8f7c] hover:text-[#ffc665] p-1.5 transition cursor-pointer"
+                title="পূর্ববর্তী গল্প"
+              >
+                <SkipBack className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => handleSkip(-15)}
+                className="text-[#d4c4b0] hover:text-[#ffc665] p-1.5 transition cursor-pointer"
+                title="১৫ সেকেন্ড পেছান"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+
+              {/* Main Play/Pause Button */}
+              <button
+                onClick={handleTogglePlay}
+                className="w-10 h-10 rounded-full bg-[#e5a93c] text-[#5e4000] flex items-center justify-center glow-amber hover:bg-[#ffc665] transition-all active:scale-95 shadow-md shrink-0 cursor-pointer"
+                title={isPlaying ? "Pause" : "Play"}
+              >
+                {isPlaying ? (
+                  <Pause className="w-4 h-4 fill-current" />
+                ) : (
+                  <Play className="w-4 h-4 ml-0.5 fill-current" />
+                )}
+              </button>
+
+              <button
+                onClick={() => handleSkip(15)}
+                className="text-[#d4c4b0] hover:text-[#ffc665] p-1.5 transition cursor-pointer"
+                title="১৫ সেকেন্ড এগোন"
+              >
+                <RotateCw className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={handleNextStory}
+                className="text-[#9d8f7c] hover:text-[#ffc665] p-1.5 transition cursor-pointer"
+                title="পরবর্তী গল্প"
+              >
+                <SkipForward className="w-4 h-4" />
+              </button>
+
+              <SleepTimerMenu
+                remainingSeconds={sleepTimerRemaining}
+                selectedOption={sleepTimerOption}
+                onSelectOption={handleSetSleepTimer}
+              />
+            </div>
+          </div>
+
+          {/* ========================================================= */}
+          {/* DESKTOP DOCK VIEW (>= md): Full 3-Column Layout            */}
+          {/* ========================================================= */}
+          <div className="hidden md:flex max-w-7xl mx-auto px-4 lg:px-8 py-3 items-center justify-between gap-4">
             {/* Left: Mini Vinyl & Track Info */}
-            <div className="flex items-center space-x-3 w-full md:w-1/4">
+            <div className="flex items-center space-x-3 w-1/4">
               <div
                 className={`w-12 h-12 rounded-full vinyl-grooves border border-[#ffc665]/40 flex items-center justify-center shrink-0 shadow-lg ${
                   isPlaying ? "animate-spin-slow" : ""
@@ -812,28 +1126,33 @@ export default function App() {
             </div>
 
             {/* Center: Playback Controls & Filament Wave Scrubber */}
-            <div className="flex flex-col items-center w-full md:w-2/4 space-y-1.5">
-              {/* Transport Buttons */}
+            <div className="flex flex-col items-center w-2/4 space-y-1.5">
+              {/* Transport Buttons with Speed & Sleep Timer */}
               <div className="flex items-center space-x-3 sm:space-x-4">
+                <SpeedSelector
+                  currentSpeed={playbackRate}
+                  onSelectSpeed={setPlaybackRate}
+                />
+
                 <button
                   onClick={handlePrevStory}
-                  className="text-[#9d8f7c] hover:text-[#ffc665] transition-colors cursor-pointer"
+                  className="text-[#9d8f7c] hover:text-[#ffc665] transition-colors cursor-pointer p-1"
                   title="পূর্ববর্তী গল্প"
                 >
                   <SkipBack className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleSkip(-15)}
-                  className="text-[#d4c4b0] hover:text-[#ffc665] transition-colors cursor-pointer"
+                  className="text-[#d4c4b0] hover:text-[#ffc665] transition-colors cursor-pointer p-1"
                   title="১৫ সেকেন্ড পেছান"
                 >
                   <RotateCcw className="w-4 h-4" />
                 </button>
 
-                {/* Main Play / Pause Button with Glow Aura */}
+                {/* Main Play / Pause Button */}
                 <button
                   onClick={handleTogglePlay}
-                  className="w-10 h-10 rounded-full bg-[#e5a93c] text-[#5e4000] flex items-center justify-center glow-amber hover:bg-[#ffc665] transition-all active:scale-95 cursor-pointer"
+                  className="w-10 h-10 rounded-full bg-[#e5a93c] text-[#5e4000] flex items-center justify-center glow-amber hover:bg-[#ffc665] transition-all active:scale-95 cursor-pointer shrink-0"
                   title={isPlaying ? "Pause" : "Play"}
                 >
                   {isPlaying ? (
@@ -845,18 +1164,24 @@ export default function App() {
 
                 <button
                   onClick={() => handleSkip(15)}
-                  className="text-[#d4c4b0] hover:text-[#ffc665] transition-colors cursor-pointer"
+                  className="text-[#d4c4b0] hover:text-[#ffc665] transition-colors cursor-pointer p-1"
                   title="১৫ সেকেন্ড এগোন"
                 >
                   <RotateCw className="w-4 h-4" />
                 </button>
                 <button
                   onClick={handleNextStory}
-                  className="text-[#9d8f7c] hover:text-[#ffc665] transition-colors cursor-pointer"
+                  className="text-[#9d8f7c] hover:text-[#ffc665] transition-colors cursor-pointer p-1"
                   title="পরবর্তী গল্প"
                 >
                   <SkipForward className="w-4 h-4" />
                 </button>
+
+                <SleepTimerMenu
+                  remainingSeconds={sleepTimerRemaining}
+                  selectedOption={sleepTimerOption}
+                  onSelectOption={handleSetSleepTimer}
+                />
               </div>
 
               {/* Scrubber and Times */}
@@ -865,7 +1190,6 @@ export default function App() {
                   {formatDuration(currentTime)}
                 </span>
 
-                {/* Filament Glow Scrubber Track */}
                 <div className="flex-1 relative cursor-pointer group py-1 flex items-center">
                   <input
                     type="range"
@@ -889,7 +1213,7 @@ export default function App() {
             </div>
 
             {/* Right: VU Equalizer, Volume, and YouTube Redirection */}
-            <div className="flex items-center justify-end space-x-4 w-full md:w-1/4">
+            <div className="flex items-center justify-end space-x-4 w-1/4">
               {/* Live Equalizer Bars */}
               <div className="hidden sm:flex items-end space-x-1 h-5 px-2 bg-[#0f0e10]/80 rounded border border-[#504535]/30">
                 <div
@@ -934,7 +1258,7 @@ export default function App() {
                 />
               </div>
 
-              {/* YouTube Redirect Button (Original external link without inline video) */}
+              {/* YouTube Redirect Button */}
               <a
                 href={currentStory.youtubeUrl}
                 target="_blank"

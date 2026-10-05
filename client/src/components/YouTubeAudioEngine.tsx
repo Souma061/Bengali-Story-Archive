@@ -11,6 +11,8 @@ interface YouTubeAudioEngineProps {
   youtubeId: string | null;
   isPlaying: boolean;
   volume: number; // 0 - 100
+  playbackRate?: number; // 0.75, 1, 1.25, 1.5, 2
+  startSeconds?: number;
   seekTime: number | null;
   onTimeUpdate: (current: number, duration: number) => void;
   onStateChange: (isPlaying: boolean) => void;
@@ -21,6 +23,8 @@ export function YouTubeAudioEngine({
   youtubeId,
   isPlaying,
   volume,
+  playbackRate = 1,
+  startSeconds = 0,
   seekTime,
   onTimeUpdate,
   onStateChange,
@@ -53,9 +57,13 @@ export function YouTubeAudioEngine({
         try {
           playerRef.current.loadVideoById({
             videoId: youtubeId,
-            startSeconds: 0,
+            startSeconds: startSeconds || 0,
           });
-          playerRef.current.playVideo();
+          if (isPlaying) {
+            playerRef.current.playVideo();
+          } else {
+            playerRef.current.pauseVideo();
+          }
           return;
         } catch {
           // Re-init below if loadVideoById failed
@@ -67,7 +75,8 @@ export function YouTubeAudioEngine({
         width: '10',
         videoId: youtubeId,
         playerVars: {
-          autoplay: 1,
+          autoplay: isPlaying ? 1 : 0,
+          start: Math.floor(startSeconds || 0),
           controls: 0,
           disablekb: 1,
           fs: 0,
@@ -78,7 +87,21 @@ export function YouTubeAudioEngine({
         events: {
           onReady: (event: any) => {
             event.target.setVolume(volume);
-            event.target.playVideo();
+            if (startSeconds && startSeconds > 0) {
+              event.target.seekTo(startSeconds, true);
+            }
+            if (playbackRate && typeof event.target.setPlaybackRate === 'function') {
+              try {
+                event.target.setPlaybackRate(playbackRate);
+              } catch {
+                // ignore
+              }
+            }
+            if (isPlaying) {
+              event.target.playVideo();
+            } else {
+              event.target.pauseVideo();
+            }
           },
           onStateChange: (event: any) => {
             // YT.PlayerState: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
@@ -101,6 +124,18 @@ export function YouTubeAudioEngine({
       window.onYouTubeIframeAPIReady = initPlayer;
     }
   }, [youtubeId]);
+
+  // Handle Playback Rate change
+  useEffect(() => {
+    if (!playerRef.current) return;
+    try {
+      if (typeof playerRef.current.setPlaybackRate === 'function') {
+        playerRef.current.setPlaybackRate(playbackRate);
+      }
+    } catch {
+      // player might still be initializing
+    }
+  }, [playbackRate]);
 
   // Handle Play/Pause
   useEffect(() => {

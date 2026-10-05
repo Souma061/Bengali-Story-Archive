@@ -156,12 +156,12 @@ export function SearchModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-start justify-center pt-12 sm:pt-20 px-4 animate-fadeIn">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-start justify-center pt-3 sm:pt-20 px-2 sm:px-4 animate-fadeIn">
       {/* Background click to dismiss */}
       <div className="fixed inset-0" onClick={onClose} />
 
       {/* Main Command Palette Dialog */}
-      <div className="relative w-full max-w-2xl bg-[#141315]/95 border border-[#504535]/40 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col z-10 glow-amber">
+      <div className="relative w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] bg-[#141315]/95 border border-[#504535]/40 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col z-10 glow-amber">
         
         {/* Search Input Bar */}
         <div className="p-4 border-b border-[#504535]/30 flex items-center gap-3 bg-[#1c1b1d]">
